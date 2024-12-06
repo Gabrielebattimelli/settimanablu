@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sheets Viewer</title>
+    <title>Settimana Blu</title>
     <style>
         table {
             border-collapse: collapse;
@@ -29,20 +29,56 @@
     <script>
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTwMblT7EjNij9X7AXDoWT1n76zDiYt28EuEC-NV1TUhb9rhbDEdLMbl4d7Ll3ZvngqS8S-xl16wPkj/pub?output=csv';
 
-        // Fetch CSV data from Google Sheets
+        // Parser CSV robusto per gestire virgole e virgolette
+        function parseCSV(csvText) {
+            const rows = [];
+            const lines = csvText.split('\n');
+            
+            lines.forEach(line => {
+                const cells = [];
+                let cell = '';
+                let insideQuotes = false;
+
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+
+                    if (char === '"' && line[i + 1] === '"') {
+                        // Gestione dei doppi apici all'interno di un campo
+                        cell += '"';
+                        i++;
+                    } else if (char === '"') {
+                        insideQuotes = !insideQuotes; // Alterna lo stato dentro/fuori le virgolette
+                    } else if (char === ',' && !insideQuotes) {
+                        // Fine cella se non siamo tra virgolette
+                        cells.push(cell.trim());
+                        cell = '';
+                    } else {
+                        cell += char; // Aggiungi caratteri al campo attuale
+                    }
+                }
+
+                // Aggiungi l'ultima cella
+                cells.push(cell.trim());
+                rows.push(cells);
+            });
+
+            return rows;
+        }
+
+        // Fetch dei dati dalla Google Sheet
         async function fetchSheetData() {
             const response = await fetch(sheetUrl);
             const csvText = await response.text();
-            const rows = csvText.split('\n').map(row => row.split(','));
+            const rows = parseCSV(csvText); // Usa il parser
             displayData(rows);
         }
 
-        // Render table from fetched data
+        // Mostra i dati in una tabella HTML
         function displayData(rows) {
             const tableHead = document.querySelector('#sheetTable thead');
             const tableBody = document.querySelector('#sheetTable tbody');
 
-            // Populate table headers
+            // Popola gli header
             const headerRow = document.createElement('tr');
             rows[0].forEach(header => {
                 const th = document.createElement('th');
@@ -51,7 +87,7 @@
             });
             tableHead.appendChild(headerRow);
 
-            // Populate table rows
+            // Popola le righe
             rows.slice(1).forEach(row => {
                 const tr = document.createElement('tr');
                 row.forEach(cell => {
@@ -65,7 +101,7 @@
             addSearchFunctionality();
         }
 
-        // Add search functionality
+        // Funzione di ricerca
         function addSearchFunctionality() {
             const searchBox = document.getElementById('searchBox');
             searchBox.addEventListener('input', function () {
@@ -78,8 +114,9 @@
             });
         }
 
-        // Initialize
+        // Avvia il tutto
         fetchSheetData();
     </script>
 </body>
 </html>
+      
