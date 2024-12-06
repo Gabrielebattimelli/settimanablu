@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sheets Viewer</title>
+    <title>Settimana Blu</title>
     <style>
         /* Stili generali */
         body {
@@ -37,14 +38,22 @@
             margin: 0 auto;
         }
 
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
+        .controls {
+            display: flex;
+            gap: 10px;
             margin-bottom: 20px;
+        }
+
+        input[type="text"], select {
+            padding: 10px;
             font-size: 16px;
             border: 1px solid #ccc;
             border-radius: 5px;
             box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"] {
+            flex: 1;
         }
 
         table {
@@ -79,13 +88,18 @@
 <body>
     <!-- Intestazione con logo e titolo -->
     <header>
-        <img src="https://i.ibb.co/kHBynyY/adelanteee.png" alt="Logo">
-        <h1>Settimana Blu </h1>
+        <img src="https://i.ibb.co/xLJb61C/LOGO-ADELANTE-white.png" alt="Logo">
+        <h1>Settimana Blu</h1>
     </header>
 
     <!-- Contenitore principale -->
     <div class="container">
-        <input type="text" id="searchBox" placeholder="Search...">
+        <div class="controls">
+            <input type="text" id="searchBox" placeholder="Search...">
+            <select id="columnSelector">
+                <option value="all">All Columns</option>
+            </select>
+        </div>
         <table id="sheetTable">
             <thead></thead>
             <tbody></tbody>
@@ -143,13 +157,25 @@
         function displayData(rows) {
             const tableHead = document.querySelector('#sheetTable thead');
             const tableBody = document.querySelector('#sheetTable tbody');
+            const columnSelector = document.getElementById('columnSelector');
+
+            // Resetta eventuali contenuti precedenti
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+            columnSelector.innerHTML = '<option value="all">All Columns</option>';
 
             // Popola gli header
             const headerRow = document.createElement('tr');
-            rows[0].forEach(header => {
+            rows[0].forEach((header, index) => {
                 const th = document.createElement('th');
                 th.textContent = header;
                 headerRow.appendChild(th);
+
+                // Aggiungi le colonne nel menu a tendina
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = header;
+                columnSelector.appendChild(option);
             });
             tableHead.appendChild(headerRow);
 
@@ -167,17 +193,39 @@
             addSearchFunctionality();
         }
 
-        // Funzione di ricerca
+        // Funzione di ricerca avanzata
         function addSearchFunctionality() {
             const searchBox = document.getElementById('searchBox');
-            searchBox.addEventListener('input', function () {
-                const searchValue = this.value.toLowerCase();
+            const columnSelector = document.getElementById('columnSelector');
+            
+            searchBox.addEventListener('input', filterTable);
+            columnSelector.addEventListener('change', filterTable);
+
+            function filterTable() {
+                const searchValue = searchBox.value.toLowerCase();
+                const columnIndex = columnSelector.value;
                 const rows = document.querySelectorAll('#sheetTable tbody tr');
+
                 rows.forEach(row => {
-                    const rowText = row.textContent.toLowerCase();
-                    row.style.display = rowText.includes(searchValue) ? '' : 'none';
+                    const cells = row.querySelectorAll('td');
+                    let match = false;
+
+                    if (columnIndex === "all") {
+                        // Cerca in tutte le colonne
+                        match = Array.from(cells).some(cell => 
+                            cell.textContent.toLowerCase().includes(searchValue)
+                        );
+                    } else {
+                        // Cerca solo nella colonna specifica
+                        const cell = cells[columnIndex];
+                        if (cell) {
+                            match = cell.textContent.toLowerCase().includes(searchValue);
+                        }
+                    }
+
+                    row.style.display = match ? '' : 'none';
                 });
-            });
+            }
         }
 
         // Avvia il tutto
