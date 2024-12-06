@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets Viewer</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="searchBox" placeholder="Search..." style="margin-bottom: 10px; width: 100%; padding: 8px;">
+    <table id="sheetTable">
+        <thead></thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTwMblT7EjNij9X7AXDoWT1n76zDiYt28EuEC-NV1TUhb9rhbDEdLMbl4d7Ll3ZvngqS8S-xl16wPkj/pub?output=csv';
+
+        // Fetch CSV data from Google Sheets
+        async function fetchSheetData() {
+            const response = await fetch(sheetUrl);
+            const csvText = await response.text();
+            const rows = csvText.split('\n').map(row => row.split(','));
+            displayData(rows);
+        }
+
+        // Render table from fetched data
+        function displayData(rows) {
+            const tableHead = document.querySelector('#sheetTable thead');
+            const tableBody = document.querySelector('#sheetTable tbody');
+
+            // Populate table headers
+            const headerRow = document.createElement('tr');
+            rows[0].forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(headerRow);
+
+            // Populate table rows
+            rows.slice(1).forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+
+            addSearchFunctionality();
+        }
+
+        // Add search functionality
+        function addSearchFunctionality() {
+            const searchBox = document.getElementById('searchBox');
+            searchBox.addEventListener('input', function () {
+                const searchValue = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#sheetTable tbody tr');
+                rows.forEach(row => {
+                    const rowText = row.textContent.toLowerCase();
+                    row.style.display = rowText.includes(searchValue) ? '' : 'none';
+                });
+            });
+        }
+
+        // Initialize
+        fetchSheetData();
+    </script>
+</body>
+</html>
