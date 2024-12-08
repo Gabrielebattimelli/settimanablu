@@ -44,16 +44,12 @@
             margin-bottom: 20px;
         }
 
-        input[type="text"], select {
+        select, input[type="text"] {
             padding: 10px;
             font-size: 16px;
             border: 1px solid #ccc;
             border-radius: 5px;
             box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        input[type="text"] {
-            flex: 1;
         }
 
         table {
@@ -100,6 +96,16 @@
                 <option value="all">All Columns</option>
             </select>
         </div>
+
+        <div class="controls">
+            <label for="daySelector">Seleziona il giorno:</label>
+            <select id="daySelector">
+                <option value="giorno1">Giorno 1</option>
+                <option value="giorno2">Giorno 2</option>
+                <option value="giorno3">Giorno 3</option>
+            </select>
+        </div>
+
         <table id="sheetTable">
             <thead></thead>
             <tbody></tbody>
@@ -123,21 +129,18 @@
                     const char = line[i];
 
                     if (char === '"' && line[i + 1] === '"') {
-                        // Gestione dei doppi apici all'interno di un campo
                         cell += '"';
                         i++;
                     } else if (char === '"') {
-                        insideQuotes = !insideQuotes; // Alterna lo stato dentro/fuori le virgolette
+                        insideQuotes = !insideQuotes;
                     } else if (char === ',' && !insideQuotes) {
-                        // Fine cella se non siamo tra virgolette
                         cells.push(cell.trim());
                         cell = '';
                     } else {
-                        cell += char; // Aggiungi caratteri al campo attuale
+                        cell += char;
                     }
                 }
 
-                // Aggiungi l'ultima cella
                 cells.push(cell.trim());
                 rows.push(cells);
             });
@@ -149,69 +152,51 @@
         async function fetchSheetData() {
             const response = await fetch(sheetUrl);
             const csvText = await response.text();
-            const rows = parseCSV(csvText); // Usa il parser
+            const rows = parseCSV(csvText);
             displayData(rows);
         }
 
         // Mostra i dati in una tabella HTML
         function displayData(rows) {
-    const tableHead = document.querySelector('#sheetTable thead');
-    const tableBody = document.querySelector('#sheetTable tbody');
-    const columnSelector = document.getElementById('columnSelector');
+            const tableHead = document.querySelector('#sheetTable thead');
+            const tableBody = document.querySelector('#sheetTable tbody');
+            const columnSelector = document.getElementById('columnSelector');
 
-    // Resetta eventuali contenuti precedenti
-    tableHead.innerHTML = '';
-    tableBody.innerHTML = '';
-    columnSelector.innerHTML = '<option value="all">All Columns</option>';
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '';
+            columnSelector.innerHTML = '<option value="all">All Columns</option>';
 
-    // Popola gli header
-    const headerRow = document.createElement('tr');
-    rows[0].forEach((header, index) => {
-        const th = document.createElement('th');
-        th.textContent = header;
+            const headerRow = document.createElement('tr');
+            rows[0].forEach((header, index) => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                th.classList.add(`col-${index}`);
+                headerRow.appendChild(th);
+                if (index >= 2) {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = header;
+                    columnSelector.appendChild(option);
+                }
+            });
+            tableHead.appendChild(headerRow);
 
-        // Aggiungi una classe per identificare la colonna
-        th.classList.add(`col-${index}`);
+            rows.slice(1).forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach((cell, index) => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    td.classList.add(`col-${index}`);
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
 
-        if (index < 2) {
-            th.style.display = 'none'; // Nascondi le prime due colonne
+            addSearchFunctionality();
+            addDaySelectorFunctionality();
         }
 
-        headerRow.appendChild(th);
-
-        // Aggiungi le colonne nel menu a tendina
-        if (index >= 2) { // Non aggiungere al selettore le colonne nascoste
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = header;
-            columnSelector.appendChild(option);
-        }
-    });
-    tableHead.appendChild(headerRow);
-
-    // Popola le righe
-    rows.slice(1).forEach(row => {
-        const tr = document.createElement('tr');
-        row.forEach((cell, index) => {
-            const td = document.createElement('td');
-            td.textContent = cell;
-
-            // Aggiungi una classe per identificare la colonna
-            td.classList.add(`col-${index}`);
-
-            if (index < 2) {
-                td.style.display = 'none'; // Nascondi le prime due colonne
-            }
-
-            tr.appendChild(td);
-        });
-        tableBody.appendChild(tr);
-    });
-
-    addSearchFunctionality();
-}
-
-        // Funzione di ricerca avanzata
+        // Funzione di ricerca
         function addSearchFunctionality() {
             const searchBox = document.getElementById('searchBox');
             const columnSelector = document.getElementById('columnSelector');
@@ -229,12 +214,10 @@
                     let match = false;
 
                     if (columnIndex === "all") {
-                        // Cerca in tutte le colonne
                         match = Array.from(cells).some(cell => 
                             cell.textContent.toLowerCase().includes(searchValue)
                         );
                     } else {
-                        // Cerca solo nella colonna specifica
                         const cell = cells[columnIndex];
                         if (cell) {
                             match = cell.textContent.toLowerCase().includes(searchValue);
@@ -246,7 +229,31 @@
             }
         }
 
-        // Avvia il tutto
+        // Funzionalità per il selettore dei giorni
+        function addDaySelectorFunctionality() {
+            const daySelector = document.getElementById('daySelector');
+
+            daySelector.addEventListener('change', () => {
+                const selectedDay = daySelector.value;
+                const columnsToHide = {
+                    giorno1: [7, 8, 9, 10],
+                    giorno2: [5, 6, 9, 10],
+                    giorno3: [5, 6, 7, 8]
+                };
+
+                const allColumns = document.querySelectorAll('#sheetTable th, #sheetTable td');
+                allColumns.forEach(cell => cell.style.display = '');
+
+                if (selectedDay in columnsToHide) {
+                    columnsToHide[selectedDay].forEach(index => {
+                        document.querySelectorAll(`.col-${index}`).forEach(cell => {
+                            cell.style.display = 'none';
+                        });
+                    });
+                }
+            });
+        }
+
         fetchSheetData();
     </script>
 </body>
