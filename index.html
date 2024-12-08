@@ -155,43 +155,61 @@
 
         // Mostra i dati in una tabella HTML
         function displayData(rows) {
-            const tableHead = document.querySelector('#sheetTable thead');
-            const tableBody = document.querySelector('#sheetTable tbody');
-            const columnSelector = document.getElementById('columnSelector');
+    const tableHead = document.querySelector('#sheetTable thead');
+    const tableBody = document.querySelector('#sheetTable tbody');
+    const columnSelector = document.getElementById('columnSelector');
 
-            // Resetta eventuali contenuti precedenti
-            tableHead.innerHTML = '';
-            tableBody.innerHTML = '';
-            columnSelector.innerHTML = '<option value="all">All Columns</option>';
+    // Resetta eventuali contenuti precedenti
+    tableHead.innerHTML = '';
+    tableBody.innerHTML = '';
+    columnSelector.innerHTML = '<option value="all">All Columns</option>';
 
-            // Popola gli header
-            const headerRow = document.createElement('tr');
-            rows[0].forEach((header, index) => {
-                const th = document.createElement('th');
-                th.textContent = header;
-                headerRow.appendChild(th);
+    // Popola gli header
+    const headerRow = document.createElement('tr');
+    rows[0].forEach((header, index) => {
+        const th = document.createElement('th');
+        th.textContent = header;
 
-                // Aggiungi le colonne nel menu a tendina
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = header;
-                columnSelector.appendChild(option);
-            });
-            tableHead.appendChild(headerRow);
+        // Aggiungi una classe per identificare la colonna
+        th.classList.add(`col-${index}`);
 
-            // Popola le righe
-            rows.slice(1).forEach(row => {
-                const tr = document.createElement('tr');
-                row.forEach(cell => {
-                    const td = document.createElement('td');
-                    td.textContent = cell;
-                    tr.appendChild(td);
-                });
-                tableBody.appendChild(tr);
-            });
-
-            addSearchFunctionality();
+        if (index < 2) {
+            th.style.display = 'none'; // Nascondi le prime due colonne
         }
+
+        headerRow.appendChild(th);
+
+        // Aggiungi le colonne nel menu a tendina
+        if (index >= 2) { // Non aggiungere al selettore le colonne nascoste
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = header;
+            columnSelector.appendChild(option);
+        }
+    });
+    tableHead.appendChild(headerRow);
+
+    // Popola le righe
+    rows.slice(1).forEach(row => {
+        const tr = document.createElement('tr');
+        row.forEach((cell, index) => {
+            const td = document.createElement('td');
+            td.textContent = cell;
+
+            // Aggiungi una classe per identificare la colonna
+            td.classList.add(`col-${index}`);
+
+            if (index < 2) {
+                td.style.display = 'none'; // Nascondi le prime due colonne
+            }
+
+            tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+    });
+
+    addSearchFunctionality();
+}
 
         // Funzione di ricerca avanzata
         function addSearchFunctionality() {
